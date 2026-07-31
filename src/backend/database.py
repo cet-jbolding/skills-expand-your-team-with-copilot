@@ -172,7 +172,7 @@ initial_activities = {
             "start_time": "20:30",
             "end_time": "19:00"
         },
-        "max_participants": 15,
+        "max_participants": 25,
         "participants": []
     }
 }
