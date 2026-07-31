@@ -350,6 +350,49 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function getActivityShareUrl(activityName) {
+    return `${window.location.origin}${
+      window.location.pathname
+    }?activity=${encodeURIComponent(activityName)}`;
+  }
+
+  function getActivityShareText(activityName, details) {
+    return `Check out "${activityName}" at Mergington High School! ${
+      details.description
+    } Schedule: ${formatSchedule(details)}.`;
+  }
+
+  function copyTextWithFallback(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  async function copyActivityShareInfo(activityName, details) {
+    const shareContent = `${getActivityShareText(
+      activityName,
+      details
+    )} ${getActivityShareUrl(activityName)}`;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareContent);
+      } else {
+        copyTextWithFallback(shareContent);
+      }
+      showMessage("Share link copied! You can now send it to your friends.", "success");
+    } catch (error) {
+      showMessage("Couldn't copy the share link. Please copy it manually.", "error");
+      console.error("Error copying share info:", error);
+    }
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -557,6 +600,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    const activityShareUrl = getActivityShareUrl(name);
+    const encodedShareUrl = encodeURIComponent(activityShareUrl);
+    const encodedShareText = encodeURIComponent(
+      `${getActivityShareText(name, details)} ${activityShareUrl}`
+    );
 
     // Create activity tag
     const tagHtml = `
@@ -629,6 +677,38 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="activity-share">
+        <h5>Share with friends:</h5>
+        <div class="share-buttons">
+          <button class="share-button copy-share-button" type="button" data-activity="${name}">
+            Copy Link
+          </button>
+          <a
+            class="share-button share-link-button"
+            href="https://wa.me/?text=${encodedShareText}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
+          </a>
+          <a
+            class="share-button share-link-button"
+            href="https://twitter.com/intent/tweet?text=${encodedShareText}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            X
+          </a>
+          <a
+            class="share-button share-link-button"
+            href="https://www.facebook.com/sharer/sharer.php?u=${encodedShareUrl}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Facebook
+          </a>
+        </div>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -646,6 +726,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const copyShareButton = activityCard.querySelector(".copy-share-button");
+    copyShareButton.addEventListener("click", () =>
+      copyActivityShareInfo(name, details)
+    );
 
     activitiesList.appendChild(activityCard);
   }
